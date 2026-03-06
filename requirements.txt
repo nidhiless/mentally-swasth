@@ -13,3 +13,4 @@ python-socketio==5.11.4
 simple-websocket==1.0.0
 Werkzeug==3.0.4
 wsproto==1.2.0
+flask-mail==0.9.1

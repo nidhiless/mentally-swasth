@@ -11,19 +11,21 @@ from collections import defaultdict
 app = Flask(__name__)
 
 # Configuration
-app.config['SECRET_KEY'] = 'mentally_swasth_secret_key_2024'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mentally_swasth.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///mentally_swasth.db"
+)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ===== EMAIL CONFIGURATION =====
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'nidhi.patel.builds@gmail.com'
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', 'vsrg uhlf ahti orqf')  # Use env var in production!
-app.config['MAIL_DEFAULT_SENDER'] = 'nidhi.patel.builds@gmail.com'
-
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
 # Initialize extensions
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
