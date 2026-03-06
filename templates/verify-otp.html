@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP - Mentally Swasth</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .otp-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+        }
+
+        .otp-container {
+            width: 100%;
+            max-width: 500px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .otp-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-xl);
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-xl);
+            text-align: center;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all var(--transition-normal);
+        }
+
+        .back-btn:hover {
+            background: var(--card-hover);
+            transform: translateX(-3px);
+            border-color: var(--primary);
+        }
+
+        .mail-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            font-size: 2.5rem;
+            color: white;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+            animation: float 3s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .email-info {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 15px;
+            border-radius: var(--border-radius-lg);
+            margin: 20px 0;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .email-info p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .email-info strong {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .otp-form {
+            margin: 30px 0;
+        }
+
+        .otp-inputs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .otp-digit {
+            width: 60px;
+            height: 70px;
+            background: var(--input-bg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            color: var(--text-primary);
+            font-size: 2rem;
+            font-weight: 600;
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            transition: all var(--transition-fast);
+            required;
+        }
+
+        .otp-digit:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            transform: scale(1.05);
+        }
+
+        .timer {
+            font-size: 1.2rem;
+            margin: 20px 0;
+            color: var(--text-primary);
+        }
+
+        .timer span {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .timer.expired span {
+            color: var(--danger);
+        }
+
+        .btn-verify {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .btn-verify:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-verify:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .resend-link {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .resend-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+
+        .resend-link a:hover:not(.disabled) {
+            color: var(--secondary);
+            text-decoration: underline;
+        }
+
+        .resend-link a.disabled {
+            color: var(--text-muted);
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: var(--border-radius-md);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-xxl);
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all var(--transition-normal);
+        }
+
+        .theme-toggle:hover {
+            background: var(--card-hover);
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        @media (max-width: 480px) {
+            .otp-card {
+                padding: 30px 20px;
+            }
+
+            .otp-digit {
+                width: 45px;
+                height: 55px;
+                font-size: 1.5rem;
+            }
+
+            .theme-toggle span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="otp-page">
+    <!-- Back Button -->
+    <a href="/login" class="back-btn" title="Back to Login">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+        <i class="fas fa-moon moon-icon"></i>
+        <i class="fas fa-sun sun-icon" style="display: none;"></i>
+        <span id="themeText">Dark Mode</span>
+    </button>
+
+    <div class="otp-container">
+        <div class="otp-card">
+            <div class="mail-icon">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+
+            <h2>Verify Your Email</h2>
+            
+            <div class="email-info">
+                <p>We've sent a 6-digit verification code to</p>
+                <strong>{{ email }}</strong>
+            </div>
+
+            <!-- Error Message -->
+            {% if error %}
+            <div class="alert alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <!-- Success Message -->
+            {% if success %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i>
+                {{ success }}
+            </div>
+            {% endif %}
+
+            <form class="otp-form" id="otpForm" method="POST" action="/verify-otp">
+                <div class="otp-inputs">
+                    <input type="text" class="otp-digit" id="digit1" maxlength="1" pattern="[0-9]" inputmode="numeric" autofocus required>
+                    <input type="text" class="otp-digit" id="digit2" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="text" class="otp-digit" id="digit3" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="text" class="otp-digit" id="digit4" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="text" class="otp-digit" id="digit5" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                    <input type="text" class="otp-digit" id="digit6" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                </div>
+
+                <input type="hidden" name="otp" id="otpHidden">
+                <input type="hidden" name="username" value="{{ username }}">
+
+                <div class="timer" id="timer">
+                    Time remaining: <span id="time">05:00</span>
+                </div>
+
+                <button type="submit" class="btn-verify" id="verifyBtn">
+                    <i class="fas fa-check-circle"></i>
+                    Verify & Login
+                </button>
+            </form>
+
+            <div class="resend-link">
+                Didn't receive the code? 
+                <a href="#" id="resendLink" onclick="resendOTP(event)">Resend OTP</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== OTP INPUT AUTO-FOCUS ==========
+        const digits = document.querySelectorAll('.otp-digit');
+        
+        digits.forEach((digit, index) => {
+            digit.addEventListener('input', function() {
+                // Allow only numbers
+                this.value = this.value.replace(/[^0-9]/g, '');
+                
+                if (this.value.length === 1) {
+                    if (index < digits.length - 1) {
+                        digits[index + 1].focus();
+                    }
+                }
+                updateHiddenOTP();
+                
+                // Auto-submit if all digits filled
+                if (Array.from(digits).every(d => d.value.length === 1)) {
+                    document.getElementById("otpForm").submit();
+                }
+            });
+
+            digit.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && this.value.length === 0 && index > 0) {
+                    digits[index - 1].focus();
+                }
+            });
+
+            digit.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const paste = e.clipboardData.getData('text').replace(/\D/g, ''); // Remove non-digits
+                if (/^\d+$/.test(paste)) {
+                    const numbers = paste.slice(0, 6).split('');
+                    numbers.forEach((num, i) => {
+                        if (i < digits.length) {
+                            digits[i].value = num;
+                        }
+                    });
+                    if (numbers.length > 0) {
+                        digits[Math.min(numbers.length - 1, 5)].focus();
+                    }
+                    updateHiddenOTP();
+                    
+                    // Auto-submit if all digits filled
+                    if (Array.from(digits).every(d => d.value.length === 1)) {
+                        document.getElementById("otpForm").submit();
+                    }
+                }
+            });
+        });
+
+        function updateHiddenOTP() {
+            const otp = Array.from(digits).map(d => d.value).join('');
+            document.getElementById('otpHidden').value = otp;
+        }
+
+        // ========== FORM VALIDATION ==========
+        document.getElementById("otpForm").addEventListener("submit", function(e) {
+            const otp = document.getElementById("otpHidden").value;
+            if (otp.length !== 6) {
+                e.preventDefault();
+                alert("Please enter the complete 6-digit OTP");
+                return;
+            }
+        });
+
+        // ========== TIMER ==========
+        let timeLeft = 300; // 5 minutes in seconds
+        const timerElement = document.getElementById('time');
+        const timerContainer = document.getElementById('timer');
+        const resendLink = document.getElementById('resendLink');
+        let timerInterval;
+        
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerContainer.classList.add('expired');
+                    timerElement.textContent = 'Expired';
+                    document.getElementById('verifyBtn').disabled = true;
+                    resendLink.classList.remove('disabled');
+                } else {
+                    timeLeft--;
+                }
+            }, 1000);
+        }
+        
+        startTimer();
+
+        // ========== RESEND OTP ==========
+        function resendOTP(event) {
+            event.preventDefault();
+            
+            if (timeLeft > 0 && timeLeft < 300) {
+                alert('Please wait for the current OTP to expire before requesting a new one.');
+                return;
+            }
+            
+            resendLink.classList.add('disabled');
+            resendLink.textContent = 'Sending...';
+            
+            // Get username from the page
+            const username = '{{ username }}';
+            
+            fetch('/resend-otp', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: username })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('New OTP sent to your email!');
+                    timeLeft = 300;
+                    timerContainer.classList.remove('expired');
+                    document.getElementById('verifyBtn').disabled = false;
+                    resendLink.textContent = 'Resend OTP';
+                    resendLink.classList.remove('disabled');
+                    // Restart timer
+                    startTimer();
+                } else {
+                    alert(data.error || 'Failed to resend OTP');
+                    resendLink.textContent = 'Resend OTP';
+                    resendLink.classList.remove('disabled');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to resend OTP');
+                resendLink.textContent = 'Resend OTP';
+                resendLink.classList.remove('disabled');
+            });
+        }
+
+        // ========== THEME TOGGLE ==========
+        function toggleTheme() {
+            const body = document.body;
+            const moonIcon = document.querySelector('.moon-icon');
+            const sunIcon = document.querySelector('.sun-icon');
+            const themeText = document.getElementById('themeText');
+            
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                moonIcon.style.display = 'inline-block';
+                sunIcon.style.display = 'none';
+                themeText.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'inline-block';
+                themeText.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const moonIcon = document.querySelector('.moon-icon');
+            const sunIcon = document.querySelector('.sun-icon');
+            const themeText = document.getElementById('themeText');
+            
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'inline-block';
+                themeText.textContent = 'Light Mode';
+            } else {
+                document.body.classList.remove('light-mode');
+                moonIcon.style.display = 'inline-block';
+                sunIcon.style.display = 'none';
+                themeText.textContent = 'Dark Mode';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initTheme);
+    </script>
+</body>
+</html>

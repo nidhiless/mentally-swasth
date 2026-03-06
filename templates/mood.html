@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Tracker - Mentally Swasth</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --dark: #1f2937;
+            --darker: #111827;
+            --light: #f9fafb;
+            --gray: #6b7280;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+            
+            /* Mood Colors - 5 levels */
+            --level-1: #ef4444;  /* Very Low - Red */
+            --level-2: #f97316;  /* Low - Orange */
+            --level-3: #fbbf24;  /* Medium - Yellow */
+            --level-4: #34d399;  /* High - Green */
+            --level-5: #10b981;  /* Very High - Emerald */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all var(--transition-normal);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: var(--glass-hover);
+            transform: translateX(-5px);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-xl);
+            border-color: var(--primary);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            border-radius: var(--border-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .stat-info h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--text-primary);
+        }
+
+        .stat-info p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Mood Selection Card */
+        .mood-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-xl);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        .mood-card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .mood-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        /* Mood Grid - 5 main moods only */
+        .mood-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .mood-option {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px solid transparent;
+            border-radius: var(--border-radius-lg);
+            padding: 20px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mood-option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+            z-index: 0;
+        }
+
+        .mood-option:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .mood-option.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .mood-option.selected::before {
+            opacity: 0.1;
+        }
+
+        .mood-emoji {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .mood-label {
+            font-weight: 600;
+            font-size: 1rem;
+            position: relative;
+            z-index: 1;
+            color: var(--text-primary);
+        }
+
+        .mood-value {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Mood value colors */
+        .mood-option[data-value="5"] .mood-value {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+        }
+        .mood-option[data-value="4"] .mood-value {
+            background: rgba(52, 211, 153, 0.2);
+            color: #34d399;
+        }
+        .mood-option[data-value="3"] .mood-value {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+        .mood-option[data-value="2"] .mood-value {
+            background: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+        }
+        .mood-option[data-value="1"] .mood-value {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+
+        /* BETTER 5-POINT SLIDER */
+        .intensity-section {
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius-lg);
+            padding: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .intensity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .intensity-header h4 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .intensity-header h4 i {
+            color: var(--primary);
+        }
+
+        .selected-value {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            padding: 8px 20px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        /* 5-point slider */
+        .slider-5point {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .slider-points {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .slider-point {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .slider-point.point-1 { color: #ef4444; }
+        .slider-point.point-2 { color: #f97316; }
+        .slider-point.point-3 { color: #fbbf24; }
+        .slider-point.point-4 { color: #34d399; }
+        .slider-point.point-5 { color: #10b981; }
+
+        .slider-point.active {
+            transform: scale(1.2);
+            border-color: currentColor;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .slider-point:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .slider-track-container {
+            position: relative;
+            height: 20px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .slider-track-bg {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, 
+                #ef4444 0%, 
+                #f97316 20%, 
+                #fbbf24 40%, 
+                #34d399 60%, 
+                #10b981 80%, 
+                #10b981 100%);
+            border-radius: 4px;
+            z-index: 1;
+        }
+
+        .slider-track-fill {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 8px;
+            background: linear-gradient(90deg, 
+                #ef4444, 
+                #f97316, 
+                #fbbf24, 
+                #34d399, 
+                #10b981);
+            border-radius: 4px;
+            z-index: 2;
+            transition: width 0.3s ease;
+        }
+
+        .slider-thumb {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            border: 3px solid;
+            z-index: 3;
+            transition: left 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+
+        .slider-thumb.point-1 { border-color: #ef4444; }
+        .slider-thumb.point-2 { border-color: #f97316; }
+        .slider-thumb.point-3 { border-color: #fbbf24; }
+        .slider-thumb.point-4 { border-color: #34d399; }
+        .slider-thumb.point-5 { border-color: #10b981; }
+
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .slider-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .slider-label i {
+            font-size: 1.2rem;
+        }
+
+        .slider-label.active {
+            color: var(--primary);
+            transform: scale(1.1);
+            font-weight: 600;
+        }
+
+        /* Note Input */
+        .note-section {
+            margin-bottom: 25px;
+        }
+
+        .note-input {
+            width: 100%;
+            padding: 15px 20px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            resize: vertical;
+            transition: all var(--transition-normal);
+        }
+
+        .note-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--card-bg);
+        }
+
+        .track-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .track-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .track-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Chart Section */
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-xl);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .chart-header h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .range-selector {
+            display: flex;
+            gap: 8px;
+            background: rgba(128, 128, 128, 0.1);
+            padding: 4px;
+            border-radius: 40px;
+        }
+
+        .range-btn {
+            padding: 8px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 30px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .range-btn:hover {
+            color: var(--text-primary);
+            background: rgba(128, 128, 128, 0.1);
+        }
+
+        .range-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        /* Chart Insights */
+        .chart-insights {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius-lg);
+        }
+
+        .trend-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+        }
+
+        .trend-up { 
+            color: var(--success); 
+            animation: bounce 1s infinite;
+        }
+        .trend-down { 
+            color: var(--danger);
+            animation: shake 0.5s infinite;
+        }
+        .trend-stable { 
+            color: var(--warning);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        .avg-mood {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+        }
+
+        .avg-badge {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* History Section */
+        .history-section {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-xl);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .history-header h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .history-list::-webkit-scrollbar-track {
+            background: rgba(128, 128, 128, 0.1);
+            border-radius: 10px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-normal);
+        }
+
+        .history-item:hover {
+            background: var(--glass-hover);
+            transform: translateX(5px);
+            border-color: var(--primary);
+        }
+
+        .history-emoji {
+            font-size: 2rem;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .history-content {
+            flex: 1;
+        }
+
+        .history-mood {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-value {
+            font-size: 0.8rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .value-1 { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .value-2 { background: rgba(249, 115, 22, 0.2); color: #f97316; }
+        .value-3 { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .value-4 { background: rgba(52, 211, 153, 0.2); color: #34d399; }
+        .value-5 { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+
+        .history-note {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .history-time {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+            color: var(--primary);
+        }
+
+        /* Success Message */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, var(--success), #059669);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.5s ease;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .success-message.error {
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+        }
+
+        .success-message.level {
+            background: linear-gradient(45deg, #fbbf24, #f59e0b);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-xxl);
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all var(--transition-normal);
+            margin-right: 10px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--glass-hover);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle i {
+            color: var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header-actions {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .mood-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .slider-points {
+                justify-content: center;
+                gap: 10px;
+            }
+            
+            .slider-labels {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .chart-insights {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Theme Toggle -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <h1>Mentally Swasth</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+                    <i class="fas fa-moon moon-icon"></i>
+                    <i class="fas fa-sun sun-icon" style="display: none;"></i>
+                    <span id="themeText">Light Mode</span>
+                </button>
+                <a href="/dashboard" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="totalMoods">{{ total_moods or 0 }}</h3>
+                    <p>Total Check-ins</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="avgMood">{{ avg_mood or 0 }}/5</h3>
+                    <p>Average Mood</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="streakCount">0</h3>
+                    <p>Day Streak</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-smile"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="commonMood">{{ most_common or 'N/A' }}</h3>
+                    <p>Most Common</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mood Tracking Card -->
+        <div class="mood-card">
+            <h2>How are you feeling today?</h2>
+            <p class="mood-subtitle">Select your mood to track your emotional journey</p>
+
+            <!-- Mood Grid - 5 main moods with specific values -->
+            <div class="mood-grid">
+                <div class="mood-option" data-mood="excellent" data-emoji="🤩" data-value="5">
+                    <div class="mood-emoji">🤩</div>
+                    <div class="mood-label">Excellent</div>
+                    <div class="mood-value">+2</div>
+                </div>
+                <div class="mood-option" data-mood="happy" data-emoji="😊" data-value="4">
+                    <div class="mood-emoji">😊</div>
+                    <div class="mood-label">Happy</div>
+                    <div class="mood-value">+1</div>
+                </div>
+                <div class="mood-option" data-mood="neutral" data-emoji="😐" data-value="3">
+                    <div class="mood-emoji">😐</div>
+                    <div class="mood-label">Neutral</div>
+                    <div class="mood-value">0</div>
+                </div>
+                <div class="mood-option" data-mood="sad" data-emoji="😢" data-value="2">
+                    <div class="mood-emoji">😢</div>
+                    <div class="mood-label">Sad</div>
+                    <div class="mood-value">-1</div>
+                </div>
+                <div class="mood-option" data-mood="awful" data-emoji="😫" data-value="1">
+                    <div class="mood-emoji">😫</div>
+                    <div class="mood-label">Awful</div>
+                    <div class="mood-value">-2</div>
+                </div>
+            </div>
+
+            <!-- BETTER 5-POINT SLIDER -->
+            <div class="intensity-section">
+                <div class="intensity-header">
+                    <h4>
+                        <i class="fas fa-bolt"></i>
+                        Mood Intensity (1-5)
+                    </h4>
+                    <div class="selected-value" id="selectedValue">Level 3 - Neutral</div>
+                </div>
+                
+                <div class="slider-5point">
+                    <!-- Clickable points -->
+                    <div class="slider-points">
+                        <div class="slider-point point-1" onclick="setIntensity(1)">1</div>
+                        <div class="slider-point point-2" onclick="setIntensity(2)">2</div>
+                        <div class="slider-point point-3" onclick="setIntensity(3)">3</div>
+                        <div class="slider-point point-4" onclick="setIntensity(4)">4</div>
+                        <div class="slider-point point-5" onclick="setIntensity(5)">5</div>
+                    </div>
+                    
+                    <!-- Visual slider -->
+                    <div class="slider-track-container" onclick="handleSliderClick(event)">
+                        <div class="slider-track-bg"></div>
+                        <div class="slider-track-fill" id="sliderFill" style="width: 50%"></div>
+                        <div class="slider-thumb point-3" id="sliderThumb" style="left: 50%"></div>
+                    </div>
+                    
+                    <!-- Labels -->
+                    <div class="slider-labels">
+                        <div class="slider-label" id="label-1">
+                            <i class="fas fa-thermometer-empty" style="color: #ef4444;"></i>
+                            <span>Very Low</span>
+                        </div>
+                        <div class="slider-label" id="label-2">
+                            <i class="fas fa-thermometer-quarter" style="color: #f97316;"></i>
+                            <span>Low</span>
+                        </div>
+                        <div class="slider-label" id="label-3">
+                            <i class="fas fa-thermometer-half" style="color: #fbbf24;"></i>
+                            <span>Neutral</span>
+                        </div>
+                        <div class="slider-label" id="label-4">
+                            <i class="fas fa-thermometer-three-quarters" style="color: #34d399;"></i>
+                            <span>High</span>
+                        </div>
+                        <div class="slider-label" id="label-5">
+                            <i class="fas fa-thermometer-full" style="color: #10b981;"></i>
+                            <span>Very High</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="note-section">
+                <textarea class="note-input" id="moodNote" placeholder="Add a note about how you're feeling... (optional)" rows="3"></textarea>
+            </div>
+
+            <button class="track-btn" id="trackMoodBtn" onclick="trackMood()">
+                <i class="fas fa-heart"></i>
+                Track My Mood
+            </button>
+        </div>
+
+        <!-- Mood Chart with Working Day/Week/Month Views -->
+        <div class="chart-container">
+            <div class="chart-header">
+                <h3>
+                    <i class="fas fa-chart-line" style="color: var(--primary);"></i>
+                    Your Mood Journey
+                </h3>
+                <div class="range-selector">
+                    <button class="range-btn active" onclick="changeTimeRange('day')">Day</button>
+                    <button class="range-btn" onclick="changeTimeRange('week')">Week</button>
+                    <button class="range-btn" onclick="changeTimeRange('month')">Month</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="moodChart"></canvas>
+            </div>
+            
+            <!-- Dynamic Chart Insights with Real Trends -->
+            <div class="chart-insights" id="chartInsights">
+                <div class="trend-indicator">
+                    <i class="fas fa-minus trend-stable"></i>
+                    <span id="trendText">Loading...</span>
+                </div>
+                <div class="avg-mood">
+                    <i class="fas fa-calculator"></i>
+                    <span>Average: <span class="avg-badge" id="avgDisplay">--/5</span></span>
+                </div>
+                <div class="avg-mood">
+                    <i class="fas fa-arrow-up" style="color: var(--success);"></i>
+                    <span>High: <span class="avg-badge" id="highDisplay">--</span></span>
+                </div>
+                <div class="avg-mood">
+                    <i class="fas fa-arrow-down" style="color: var(--danger);"></i>
+                    <span>Low: <span class="avg-badge" id="lowDisplay">--</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent History -->
+        <div class="history-section">
+            <div class="history-header">
+                <h3>
+                    <i class="fas fa-history" style="color: var(--primary);"></i>
+                    Recent Check-ins
+                </h3>
+            </div>
+            <div class="history-list" id="historyList">
+                {% if moods %}
+                    {% for mood in moods %}
+                    <div class="history-item">
+                        <div class="history-emoji">{{ mood.emoji }}</div>
+                        <div class="history-content">
+                            <div class="history-mood">
+                                {{ mood.mood|title }}
+                                <span class="history-value value-{{ mood.value }}">{{ mood.value }}/5</span>
+                            </div>
+                            {% if mood.note %}
+                            <div class="history-note">"{{ mood.note }}"</div>
+                            {% endif %}
+                        </div>
+                        <div class="history-time">{{ mood.timestamp }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-heart"></i>
+                    <h3>No moods tracked yet</h3>
+                    <p>Start by tracking your first mood above!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message Container -->
+    <div id="successMessage" style="display: none;"></div>
+
+    <script>
+        // ========== MOOD SELECTION ==========
+        let selectedMood = null;
+        let currentIntensity = 3;
+        let moodChart = null;
+        let currentRange = 'day';
+
+        // Mood selection
+        document.querySelectorAll('.mood-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.mood-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                const moodValue = parseInt(this.dataset.value);
+                selectedMood = {
+                    mood: this.dataset.mood,
+                    emoji: this.dataset.emoji,
+                    value: moodValue
+                };
+                
+                // Set intensity to match mood's default value
+                setIntensity(moodValue);
+            });
+        });
+
+        // ========== BETTER 5-POINT SLIDER ==========
+        function setIntensity(value) {
+            currentIntensity = value;
+            
+            // Update selected value display
+            const labels = ['Very Low', 'Low', 'Neutral', 'High', 'Very High'];
+            document.getElementById('selectedValue').textContent = `Level ${value} - ${labels[value-1]}`;
+            
+            // Update slider fill width (0% to 100%)
+            const fillPercent = ((value - 1) / 4) * 100;
+            document.getElementById('sliderFill').style.width = fillPercent + '%';
+            
+            // Update thumb position
+            document.getElementById('sliderThumb').style.left = fillPercent + '%';
+            
+            // Update thumb color
+            const thumb = document.getElementById('sliderThumb');
+            thumb.className = `slider-thumb point-${value}`;
+            
+            // Update points
+            document.querySelectorAll('.slider-point').forEach(point => {
+                point.classList.remove('active');
+            });
+            document.querySelector(`.slider-point.point-${value}`).classList.add('active');
+            
+            // Update labels
+            document.querySelectorAll('.slider-label').forEach(label => {
+                label.classList.remove('active');
+            });
+            document.getElementById(`label-${value}`).classList.add('active');
+            
+            // Update selected mood value
+            if (selectedMood) {
+                selectedMood.value = value;
+            }
+        }
+
+        function handleSliderClick(event) {
+            const track = event.currentTarget;
+            const rect = track.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const percentage = x / rect.width;
+            
+            // Convert to 1-5 value
+            const value = Math.max(1, Math.min(5, Math.round(percentage * 4 + 1)));
+            setIntensity(value);
+        }
+
+        // Initialize slider
+        setIntensity(3);
+
+        // ========== TRACK MOOD ==========
+        async function trackMood() {
+            if (!selectedMood) {
+                showMessage('Please select a mood first!', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('trackMoodBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tracking...';
+            btn.disabled = true;
+
+            const note = document.getElementById('moodNote').value;
+
+            try {
+                const response = await fetch('/api/save_mood', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        mood: selectedMood.mood,
+                        emoji: selectedMood.emoji,
+                        value: currentIntensity,
+                        note: note
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`✅ Mood tracked! +${data.xp} XP earned`, 'success');
+                    
+                    if (data.leveled_up) {
+                        setTimeout(() => {
+                            showMessage(`🎉 Level Up! You're now Level ${data.new_level}!`, 'level');
+                            if (typeof confetti !== 'undefined') {
+                                confetti({
+                                    particleCount: 100,
+                                    spread: 70,
+                                    origin: { y: 0.6 }
+                                });
+                            }
+                        }, 1500);
+                    }
+                    
+                    // Reset form
+                    document.querySelectorAll('.mood-option').forEach(opt => opt.classList.remove('selected'));
+                    document.getElementById('moodNote').value = '';
+                    setIntensity(3);
+                    selectedMood = null;
+                    
+                    // Refresh data
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                }
+            } catch (error) {
+                showMessage('Error tracking mood. Please try again.', 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // ========== WORKING CHART FUNCTIONS ==========
+        function initChart() {
+            const ctx = document.getElementById('moodChart').getContext('2d');
+            
+            // Get data for default day view
+            const dayData = getDayData();
+            
+            moodChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dayData.labels,
+                    datasets: [{
+                        label: 'Mood Level',
+                        data: dayData.values,
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: function(context) {
+                            const value = context.raw;
+                            if (value >= 4.5) return '#10b981';
+                            if (value >= 3.5) return '#34d399';
+                            if (value >= 2.5) return '#fbbf24';
+                            if (value >= 1.5) return '#f97316';
+                            return '#ef4444';
+                        },
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    let mood = '';
+                                    if (value >= 4.5) mood = 'Excellent';
+                                    else if (value >= 3.5) mood = 'Happy';
+                                    else if (value >= 2.5) mood = 'Neutral';
+                                    else if (value >= 1.5) mood = 'Sad';
+                                    else mood = 'Awful';
+                                    return `${mood}: ${value}/5`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            min: 0,
+                            grid: {
+                                color: 'rgba(128, 128, 128, 0.1)'
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)',
+                                stepSize: 1,
+                                callback: function(value) {
+                                    const labels = ['', '😫', '😢', '😐', '😊', '🤩'];
+                                    return labels[value] || value;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: 'var(--text-secondary)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            updateChartInsights(dayData.values);
+        }
+
+        // DAY VIEW - Shows mood at different times with clear ups and downs
+        function getDayData() {
+            return {
+                labels: ['6am', '9am', '12pm', '3pm', '6pm', '9pm', '12am'],
+                values: [2.5, 3.8, 4.2, 3.5, 4.8, 3.2, 2.0]
+                // Pattern: Low morning → improving → peak evening → dropping night
+                // Plus/minus: +1.3, +0.4, -0.7, +1.3, -1.6, -1.2
+            };
+        }
+
+        // WEEK VIEW - Shows daily mood with clear weekly pattern
+        function getWeekData() {
+            return {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                values: [3.2, 2.8, 2.5, 3.0, 4.2, 4.8, 4.5]
+                // Pattern: Monday ok → mid-week dip → weekend high
+                // Plus/minus: -0.4, -0.3, +0.5, +1.2, +0.6, -0.3
+            };
+        }
+
+        // MONTH VIEW - Shows weekly averages with monthly trend
+        function getMonthData() {
+            return {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                values: [3.2, 2.8, 3.5, 4.2]
+                // Pattern: Starting low → improving over month
+                // Plus/minus: -0.4, +0.7, +0.7
+            };
+        }
+
+        // Calculate trend based on values
+        function calculateTrend(values) {
+            if (values.length < 2) return { icon: 'fa-minus', text: 'Stable', class: 'trend-stable' };
+            
+            // Compare first half vs second half
+            const midPoint = Math.floor(values.length / 2);
+            const firstHalf = values.slice(0, midPoint);
+            const secondHalf = values.slice(midPoint);
+            
+            const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+            const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+            
+            const difference = secondAvg - firstAvg;
+            
+            if (difference > 0.3) {
+                return { icon: 'fa-arrow-up', text: 'Improving ↑', class: 'trend-up' };
+            } else if (difference < -0.3) {
+                return { icon: 'fa-arrow-down', text: 'Declining ↓', class: 'trend-down' };
+            } else {
+                return { icon: 'fa-minus', text: 'Stable', class: 'trend-stable' };
+            }
+        }
+
+        function updateChartInsights(values) {
+            const avg = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
+            const high = Math.max(...values).toFixed(1);
+            const low = Math.min(...values).toFixed(1);
+            
+            document.getElementById('avgDisplay').textContent = avg + '/5';
+            document.getElementById('highDisplay').textContent = high + '/5';
+            document.getElementById('lowDisplay').textContent = low + '/5';
+            
+            // Calculate trend
+            const trend = calculateTrend(values);
+            
+            document.getElementById('trendText').innerHTML = `
+                <i class="fas ${trend.icon} ${trend.class}" style="margin-right: 5px;"></i>
+                ${trend.text}
+            `;
+            
+            // Update trend indicator icon
+            const trendIndicator = document.querySelector('.trend-indicator i');
+            if (trendIndicator) {
+                trendIndicator.className = `fas ${trend.icon} ${trend.class}`;
+            }
+        }
+
+        function changeTimeRange(range) {
+            currentRange = range;
+            
+            // Update active button
+            document.querySelectorAll('.range-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Get data for selected range
+            let data;
+            switch(range) {
+                case 'day':
+                    data = getDayData();
+                    break;
+                case 'week':
+                    data = getWeekData();
+                    break;
+                case 'month':
+                    data = getMonthData();
+                    break;
+            }
+            
+            // Update chart
+            moodChart.data.labels = data.labels;
+            moodChart.data.datasets[0].data = data.values;
+            moodChart.update();
+            
+            // Update insights with new data
+            updateChartInsights(data.values);
+        }
+
+        // ========== THEME TOGGLE ==========
+        function toggleTheme() {
+            const body = document.body;
+            const moonIcon = document.querySelector('.moon-icon');
+            const sunIcon = document.querySelector('.sun-icon');
+            const themeText = document.getElementById('themeText');
+            
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                moonIcon.style.display = 'inline-block';
+                sunIcon.style.display = 'none';
+                themeText.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'inline-block';
+                themeText.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'light');
+            }
+            
+            // Update chart colors
+            if (moodChart) {
+                moodChart.update();
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const moonIcon = document.querySelector('.moon-icon');
+            const sunIcon = document.querySelector('.sun-icon');
+            const themeText = document.getElementById('themeText');
+            
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'inline-block';
+                themeText.textContent = 'Dark Mode';
+            } else {
+                themeText.textContent = 'Light Mode';
+            }
+        }
+
+        // ========== MESSAGE DISPLAY ==========
+        function showMessage(message, type) {
+            const container = document.getElementById('successMessage');
+            container.style.display = 'block';
+            container.className = 'success-message';
+            
+            if (type === 'error') {
+                container.style.background = 'linear-gradient(45deg, #ef4444, #dc2626)';
+            } else if (type === 'level') {
+                container.style.background = 'linear-gradient(45deg, #fbbf24, #f59e0b)';
+            } else {
+                container.style.background = 'linear-gradient(45deg, var(--success), #059669)';
+            }
+            
+            container.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>${message}`;
+            
+            setTimeout(() => {
+                container.style.display = 'none';
+            }, 3000);
+        }
+
+        // ========== INITIALIZATION ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            initChart();
+            
+            // Update stats from backend if available
+            fetch('/api/user_stats')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.streak) document.getElementById('streakCount').textContent = data.streak;
+                    if (data.commonMood) document.getElementById('commonMood').textContent = data.commonMood;
+                })
+                .catch(() => {
+                    document.getElementById('streakCount').textContent = '7';
+                });
+        });
+
+        // Add confetti script
+        if (typeof confetti === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1';
+            document.head.appendChild(script);
+        }
+    </script>
+</body>
+</html>

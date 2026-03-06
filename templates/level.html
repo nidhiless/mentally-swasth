@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Level Progress - Mentally Swasth</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Page-specific styles */
+        .level-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .level-card {
+            background: var(--glass-bg);
+            border-radius: var(--border-radius-xl);
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            max-width: 600px;
+            width: 100%;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .level-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .level-header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .level-header p {
+            color: var(--gray-400);
+            font-size: 1rem;
+        }
+
+        /* Current Level Badge */
+        .current-level {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(16, 185, 129, 0.2));
+            border-radius: var(--border-radius-lg);
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .current-level::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        .level-badge {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .level-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--light);
+            position: relative;
+            z-index: 1;
+        }
+
+        .level-subtitle {
+            color: var(--gray-400);
+            font-size: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* XP Progress Section */
+        .xp-section {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius-lg);
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .xp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .xp-header h3 {
+            font-size: 1.1rem;
+            color: var(--gray-300);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .xp-header h3 i {
+            color: var(--warning);
+        }
+
+        .xp-numbers {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .xp-numbers span {
+            color: var(--primary);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 6px;
+            transition: width 1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .xp-details {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray-400);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+            transition: all var(--transition-normal);
+        }
+
+        .stat-item:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-icon {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--gray-400);
+            font-size: 0.85rem;
+        }
+
+        /* Level Roadmap */
+        .roadmap-section {
+            margin-bottom: 30px;
+        }
+
+        .roadmap-section h2 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--light);
+        }
+
+        .roadmap-section h2 i {
+            color: var(--primary);
+        }
+
+        .roadmap {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .roadmap-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--border-radius-md);
+            border: 1px solid var(--glass-border);
+            transition: all var(--transition-normal);
+            cursor: pointer;
+        }
+
+        .roadmap-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(10px);
+            border-color: var(--primary);
+        }
+
+        .roadmap-item.completed {
+            background: rgba(16, 185, 129, 0.05);
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .roadmap-item.current {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        }
+
+        .roadmap-level {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--light);
+        }
+
+        .roadmap-item.completed .roadmap-level {
+            background: linear-gradient(45deg, var(--success), #059669);
+            color: white;
+        }
+
+        .roadmap-item.current .roadmap-level {
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .roadmap-info {
+            flex: 1;
+        }
+
+        .roadmap-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--light);
+        }
+
+        .roadmap-reward {
+            color: var(--gray-400);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .roadmap-reward i {
+            color: var(--warning);
+            font-size: 0.8rem;
+        }
+
+        .roadmap-status {
+            color: var(--gray-400);
+            font-size: 0.9rem;
+            min-width: 100px;
+            text-align: right;
+        }
+
+        .roadmap-item.completed .roadmap-status {
+            color: var(--success);
+        }
+
+        .roadmap-item.current .roadmap-status {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* Milestone Card */
+        .milestone-card {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+            border-radius: var(--border-radius-lg);
+            padding: 25px;
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            margin-top: 20px;
+        }
+
+        .milestone-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .milestone-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, var(--warning), #f59e0b);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .milestone-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--light);
+        }
+
+        .milestone-header p {
+            color: var(--gray-400);
+            font-size: 0.9rem;
+        }
+
+        .milestone-rewards {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .reward-badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .reward-badge i {
+            color: var(--warning);
+        }
+
+        /* Next Level Preview */
+        .next-level-preview {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px dashed var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .next-level-badge {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--gray-400);
+        }
+
+        .next-level-info h4 {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            color: var(--light);
+        }
+
+        .next-level-info p {
+            color: var(--gray-400);
+            font-size: 0.9rem;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-md);
+            color: var(--light);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all var(--transition-normal);
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            border: none;
+        }
+
+        .action-btn.primary:hover {
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .level-card {
+                padding: 25px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .roadmap-item {
+                flex-wrap: wrap;
+            }
+
+            .roadmap-status {
+                width: 100%;
+                text-align: left;
+                margin-left: 65px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .next-level-preview {
+                flex-wrap: wrap;
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .level-badge {
+                width: 80px;
+                height: 80px;
+                font-size: 2rem;
+            }
+
+            .level-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="level-page">
+    <div class="container">
+        <!-- Header with back button -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <h1>Mentally Swasth</h1>
+            </div>
+            <a href="/dashboard" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+        </div>
+
+        <!-- Main Level Card -->
+        <div class="level-card">
+            <div class="level-header">
+                <h1>Your Progress Journey</h1>
+                <p>Track your achievements and level up your mental wellness</p>
+            </div>
+
+            <!-- Current Level Display -->
+            <div class="current-level">
+                <div class="level-badge">{{ level }}</div>
+                <div class="level-title">{{ title }}</div>
+                <div class="level-subtitle">Keep going! You're making great progress</div>
+            </div>
+
+            <!-- XP Progress Section -->
+            <div class="xp-section">
+                <div class="xp-header">
+                    <h3><i class="fas fa-star"></i> Progress to Level {{ level + 1 }}</h3>
+                    <div class="xp-numbers">
+                        <span>{{ xp_in_level }}</span> / 100 XP
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-fill" style="width: {{ progress }}%"></div>
+                </div>
+                <div class="xp-details">
+                    <span><i class="fas fa-trophy"></i> Total XP: {{ xp }} XP</span>
+                    <span><i class="fas fa-arrow-up"></i> {{ 100 - xp_in_level }} XP to next level</span>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="stat-value">{{ level }}</div>
+                    <div class="stat-label">Current Level</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-medal"></i>
+                    </div>
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">Achievements</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-icon">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="stat-value">7</div>
+                    <div class="stat-label">Day Streak</div>
+                </div>
+            </div>
+
+            <!-- Level Roadmap -->
+            <div class="roadmap-section">
+                <h2><i class="fas fa-road"></i> Your Path to Mastery</h2>
+                <div class="roadmap">
+                    <!-- Level 1 -->
+                    <div class="roadmap-item {% if level > 1 %}completed{% elif level == 1 %}current{% endif %}">
+                        <div class="roadmap-level">1</div>
+                        <div class="roadmap-info">
+                            <div class="roadmap-title">Beginner</div>
+                            <div class="roadmap-reward">
+                                <i class="fas fa-gift"></i> Unlock: Basic features
+                            </div>
+                        </div>
+                        <div class="roadmap-status">
+                            {% if level > 1 %}
+                            <i class="fas fa-check-circle"></i> Completed
+                            {% elif level == 1 %}
+                            <i class="fas fa-spinner fa-pulse"></i> Current
+                            {% else %}
+                            <i class="fas fa-lock"></i> Locked
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Level 2 -->
+                    <div class="roadmap-item {% if level > 2 %}completed{% elif level == 2 %}current{% endif %}">
+                        <div class="roadmap-level">2</div>
+                        <div class="roadmap-info">
+                            <div class="roadmap-title">Listener</div>
+                            <div class="roadmap-reward">
+                                <i class="fas fa-gift"></i> Unlock: Mood history
+                            </div>
+                        </div>
+                        <div class="roadmap-status">
+                            {% if level > 2 %}
+                            <i class="fas fa-check-circle"></i> Completed
+                            {% elif level == 2 %}
+                            <i class="fas fa-spinner fa-pulse"></i> Current
+                            {% else %}
+                            <i class="fas fa-lock"></i> Locked
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Level 3 -->
+                    <div class="roadmap-item {% if level > 3 %}completed{% elif level == 3 %}current{% endif %}">
+                        <div class="roadmap-level">3</div>
+                        <div class="roadmap-info">
+                            <div class="roadmap-title">Supporter</div>
+                            <div class="roadmap-reward">
+                                <i class="fas fa-gift"></i> Unlock: Chat features
+                            </div>
+                        </div>
+                        <div class="roadmap-status">
+                            {% if level > 3 %}
+                            <i class="fas fa-check-circle"></i> Completed
+                            {% elif level == 3 %}
+                            <i class="fas fa-spinner fa-pulse"></i> Current
+                            {% else %}
+                            <i class="fas fa-lock"></i> Locked
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Level 4 -->
+                    <div class="roadmap-item {% if level > 4 %}completed{% elif level == 4 %}current{% endif %}">
+                        <div class="roadmap-level">4</div>
+                        <div class="roadmap-info">
+                            <div class="roadmap-title">Helper</div>
+                            <div class="roadmap-reward">
+                                <i class="fas fa-gift"></i> Unlock: Achievements
+                            </div>
+                        </div>
+                        <div class="roadmap-status">
+                            {% if level > 4 %}
+                            <i class="fas fa-check-circle"></i> Completed
+                            {% elif level == 4 %}
+                            <i class="fas fa-spinner fa-pulse"></i> Current
+                            {% else %}
+                            <i class="fas fa-lock"></i> Locked
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Level 5 - Current Milestone -->
+                    {% if level >= 5 %}
+                    <div class="roadmap-item {% if level > 5 %}completed{% elif level == 5 %}current{% endif %}">
+                        <div class="roadmap-level">5</div>
+                        <div class="roadmap-info">
+                            <div class="roadmap-title">Therapist Apprentice</div>
+                            <div class="roadmap-reward">
+                                <i class="fas fa-gift"></i> Unlocked: Premium features
+                            </div>
+                        </div>
+                        <div class="roadmap-status">
+                            {% if level > 5 %}
+                            <i class="fas fa-check-circle"></i> Completed
+                            {% elif level == 5 %}
+                            <i class="fas fa-spinner fa-pulse"></i> Current
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Next levels (show if not max level) -->
+                    {% if level < 10 %}
+                    <div class="roadmap-item">
+                        <div class="roadmap-level">{{ level + 1 }}</div>
+                        <div class="roadmap-info">
+                            <div class="roadmap-title">Next Level</div>
+                            <div class="roadmap-reward">
+                                <i class="fas fa-lock"></i> ??? 
+                            </div>
+                        </div>
+                        <div class="roadmap-status">
+                            <i class="fas fa-lock"></i> Locked
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Current Milestone -->
+            <div class="milestone-card">
+                <div class="milestone-header">
+                    <div class="milestone-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div>
+                        <h3>Current Milestone</h3>
+                        <p>You've unlocked: {{ title }}</p>
+                    </div>
+                </div>
+                <div class="milestone-rewards">
+                    <span class="reward-badge">
+                        <i class="fas fa-star"></i> +50 XP bonus
+                    </span>
+                    <span class="reward-badge">
+                        <i class="fas fa-medal"></i> New achievement
+                    </span>
+                    <span class="reward-badge">
+                        <i class="fas fa-unlock"></i> New features
+                    </span>
+                </div>
+            </div>
+
+            <!-- Next Level Preview -->
+            {% if level < 10 %}
+            <div class="next-level-preview">
+                <div class="next-level-badge">{{ level + 1 }}</div>
+                <div class="next-level-info">
+                    <h4>Next Level: {{ ['Beginner', 'Listener', 'Supporter', 'Helper', 'Therapist Apprentice', 'Therapist', 'Guide', 'Master', 'Legend', 'Guru'][level] }}</h4>
+                    <p>Need {{ 100 - xp_in_level }} more XP to reach next level</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="/mood" class="action-btn">
+                    <i class="fas fa-chart-line"></i>
+                    Track Mood
+                </a>
+                <a href="/chat" class="action-btn">
+                    <i class="fas fa-comments"></i>
+                    Support Chat
+                </a>
+                <a href="/dashboard" class="action-btn primary">
+                    <i class="fas fa-home"></i>
+                    Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Animate progress bar on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.querySelector('.progress-fill').style.width = '{{ progress }}%';
+            }, 100);
+        });
+
+        // Add confetti for level up (if just leveled up)
+        {% if just_leveled_up %}
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+        {% endif %}
+    </script>
+
+    <!-- Confetti library for celebrations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+</body>
+</html>

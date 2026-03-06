@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Chat - Mentally Swasth</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <style>
+        /* Chat-specific styles - FIXED to use theme variables */
+        .chat-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            /* FIX 1: Use theme variables instead of hardcoded colors */
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+        }
+
+        .chat-wrapper {
+            width: 100%;
+            max-width: 1400px;
+            height: 90vh;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 0; /* FIX: Remove gap for connected look */
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* Users Sidebar - FIXED */
+        .users-sidebar {
+            /* FIX 2: Use theme card background instead of hardcoded rgba */
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color); /* FIX: Add divider */
+            border-radius: 25px 0 0 25px; /* Adjusted border-radius */
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-header h3 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            /* FIX 8: Use theme text color */
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+
+        .sidebar-header h3 i {
+            color: var(--primary);
+        }
+
+        .online-count {
+            margin-left: auto;
+            background: var(--success);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        .users-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .users-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .users-list::-webkit-scrollbar-track {
+            background: rgba(128, 128, 128, 0.1);
+        }
+
+        .users-list::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            margin-bottom: 5px;
+            border: 1px solid transparent;
+        }
+
+        .user-item:hover {
+            /* FIX 3: Use theme hover variable */
+            background: var(--glass-hover);
+            border-color: var(--primary);
+        }
+
+        .user-avatar-small {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1rem;
+            text-transform: uppercase;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            /* FIX 9: Use theme text color */
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .current-user-badge {
+            font-size: 0.7rem;
+            background: var(--primary);
+            padding: 2px 6px;
+            border-radius: 10px;
+            color: white;
+        }
+
+        .user-status {
+            font-size: 0.75rem;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            /* FIX 4: Add glow effect */
+            box-shadow: 0 0 8px rgba(16,185,129,0.6);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .room-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .room-info i {
+            color: var(--primary);
+        }
+
+        /* Empty state */
+        .empty-users {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-users i {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        /* Main Chat Area */
+        .chat-main {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0 25px 25px 0; /* Adjusted border-radius */
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-header h2 {
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+
+        .chat-header h2 i {
+            color: var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Messages Area - FIX 6 */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: var(--card-bg);
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(128, 128, 128, 0.1);
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* Message Wrapper - with improved animations */
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            max-width: 70%;
+            /* FIX: Better animation */
+            animation: messagePop .25s ease;
+        }
+
+        /* FIX: Message grouping */
+        .message-wrapper + .message-wrapper {
+            margin-top: 4px;
+        }
+
+        .message-wrapper.other-message + .message-wrapper.other-message .message-header {
+            display: none;
+        }
+
+        .message-wrapper.own-message + .message-wrapper.own-message .message-header {
+            display: none;
+        }
+
+        @keyframes messagePop {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .message-wrapper.own-message {
+            align-self: flex-end;
+        }
+
+        .message-wrapper.other-message {
+            align-self: flex-start;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+            padding: 0 10px;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--primary);
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .own-message .message-header {
+            justify-content: flex-end;
+        }
+
+        .own-message .message-sender {
+            color: var(--secondary);
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        /* FIX 5: Message bubble colors using theme */
+        .own-message .message-bubble {
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-bottom-right-radius: 5px;
+            margin-left: auto;
+        }
+
+        .other-message .message-bubble {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-bottom-left-radius: 5px;
+        }
+
+        .system-message {
+            align-self: center;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 10px 0;
+        }
+
+        /* Input Area - FIX 7 */
+        .chat-input-container {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: all var(--transition-normal);
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .message-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .send-btn {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all var(--transition-normal);
+        }
+
+        .send-btn:hover:not(:disabled) {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        /* FIX: Improved typing indicator */
+        .typing-indicator {
+            padding: 6px 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            opacity: 0.8;
+        }
+
+        .typing-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all var(--transition-normal);
+            margin-right: 10px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--glass-hover);
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        .theme-toggle i {
+            color: var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chat-wrapper {
+                grid-template-columns: 1fr;
+            }
+            
+            .users-sidebar {
+                display: none;
+            }
+            
+            .message-wrapper {
+                max-width: 85%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .chat-page {
+                padding: 10px;
+            }
+            
+            .chat-wrapper {
+                height: 98vh;
+            }
+        }
+    </style>
+</head>
+<body class="chat-page">
+    <div class="chat-wrapper">
+        <!-- Users Sidebar -->
+        <div class="users-sidebar">
+            <div class="sidebar-header">
+                <h3>
+                    <i class="fas fa-users"></i>
+                    Active Users
+                    <span class="online-count" id="onlineCount">0</span>
+                </h3>
+            </div>
+            
+            <div class="users-list" id="usersList">
+                <div class="empty-users">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading users...</p>
+                </div>
+            </div>
+            
+            <div class="sidebar-footer">
+                <div class="room-info">
+                    <i class="fas fa-globe"></i>
+                    <span>Community Chat</span>
+                </div>
+                <div class="room-info">
+                    <i class="fas fa-user"></i>
+                    <span>You: {{ username }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="chat-main">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <h2>
+                    <i class="fas fa-comments"></i>
+                    Community Chat
+                </h2>
+                <div class="header-actions">
+                    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+                        <i class="fas fa-moon moon-icon"></i>
+                        <i class="fas fa-sun sun-icon" style="display: none;"></i>
+                        <span id="themeText">Light Mode</span>
+                    </button>
+                    <button class="header-btn" onclick="window.location.href='/dashboard'">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Area -->
+            <div class="chat-messages" id="chatMessages"></div>
+
+            <!-- Typing Indicator -->
+            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <span id="typingText">Someone is typing...</span>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chat-input-container">
+                <div class="input-wrapper">
+                    <input type="text" class="message-input" id="messageInput" 
+                           placeholder="Type your message..." autocomplete="off">
+                    <button class="send-btn" id="sendButton" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const username = '{{ username }}';
+        const userId = '{{ user_id }}';
+        
+        let typingTimer;
+        let isTyping = false;
+
+        socket.on('connect', function() {
+            console.log('Connected to chat');
+            socket.emit('join_community');
+        });
+
+        socket.on('chat_history', function(data) {
+            const messagesDiv = document.getElementById('chatMessages');
+            messagesDiv.innerHTML = '';
+            
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    if (msg.type === 'system') {
+                        displaySystemMessage(msg);
+                    } else {
+                        displayMessage(msg);
+                    }
+                });
+            }
+            scrollToBottom();
+        });
+
+        socket.on('receive_message', function(data) {
+            if (data.type === 'system') {
+                displaySystemMessage(data);
+            } else {
+                displayMessage(data);
+            }
+            scrollToBottom();
+        });
+
+        socket.on('update_users', function(data) {
+            updateUsersList(data.users);
+            document.getElementById('onlineCount').textContent = data.count;
+        });
+
+        socket.on('user_typing', function(data) {
+            const indicator = document.getElementById('typingIndicator');
+            if (data.typing) {
+                document.getElementById('typingText').textContent = `${data.username} is typing...`;
+                indicator.style.display = 'flex';
+            } else {
+                indicator.style.display = 'none';
+            }
+        });
+
+        function displayMessage(data) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageWrapper = document.createElement('div');
+            
+            const isOwn = data.user_id == userId;
+            messageWrapper.className = `message-wrapper ${isOwn ? 'own-message' : 'other-message'}`;
+            
+            messageWrapper.innerHTML = `
+                <div class="message-header">
+                    <span class="message-sender">${escapeHtml(data.username)}</span>
+                    <span class="message-time">${data.timestamp}</span>
+                </div>
+                <div class="message-bubble">
+                    <div class="message-content">${escapeHtml(data.message)}</div>
+                </div>
+            `;
+            
+            messagesDiv.appendChild(messageWrapper);
+            scrollToBottom();
+        }
+
+        function displaySystemMessage(data) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const systemDiv = document.createElement('div');
+            systemDiv.className = 'system-message';
+            systemDiv.innerHTML = `<i class="fas fa-info-circle"></i> ${escapeHtml(data.message)}`;
+            messagesDiv.appendChild(systemDiv);
+            scrollToBottom();
+        }
+
+        function updateUsersList(users) {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '';
+            
+            if (!users || users.length === 0) {
+                usersList.innerHTML = `
+                    <div class="empty-users">
+                        <i class="fas fa-user-slash"></i>
+                        <p>No users online</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            users.forEach(username => {
+                const isCurrentUser = username === '{{ username }}';
+                const userDiv = document.createElement('div');
+                userDiv.className = 'user-item';
+                
+                // FIX 5: Add unique avatar colors based on username
+                const hue = (username.length * 35) % 360;
+                
+                userDiv.innerHTML = `
+                    <div class="user-avatar-small" style="background:hsl(${hue},70%,55%)">
+                        ${username.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="user-info">
+                        <div class="user-name">
+                            ${escapeHtml(username)}
+                            ${isCurrentUser ? '<span class="current-user-badge">You</span>' : ''}
+                        </div>
+                        <div class="user-status">
+                            <span class="online-dot"></span>
+                            Online
+                        </div>
+                    </div>
+                `;
+                usersList.appendChild(userDiv);
+            });
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            const sendBtn = document.getElementById('sendButton');
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            sendBtn.disabled = true;
+
+            socket.emit('send_message', {
+                message: message
+            });
+
+            input.value = '';
+            
+            if (isTyping) {
+                isTyping = false;
+                socket.emit('typing', { typing: false });
+            }
+
+            setTimeout(() => {
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                sendBtn.disabled = false;
+            }, 300);
+        }
+
+        document.getElementById('messageInput').addEventListener('input', function() {
+            if (!isTyping && this.value.length > 0) {
+                isTyping = true;
+                socket.emit('typing', { typing: true });
+            }
+            
+            clearTimeout(typingTimer);
+            typingTimer = setTimeout(() => {
+                if (isTyping) {
+                    isTyping = false;
+                    socket.emit('typing', { typing: false });
+                }
+            }, 1000);
+        });
+
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        function scrollToBottom() {
+            const messagesDiv = document.getElementById('chatMessages');
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const moonIcon = document.querySelector('.moon-icon');
+            const sunIcon = document.querySelector('.sun-icon');
+            const themeText = document.getElementById('themeText');
+            
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                moonIcon.style.display = 'inline-block';
+                sunIcon.style.display = 'none';
+                themeText.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'inline-block';
+                themeText.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const moonIcon = document.querySelector('.moon-icon');
+            const sunIcon = document.querySelector('.sun-icon');
+            const themeText = document.getElementById('themeText');
+            
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'inline-block';
+                themeText.textContent = 'Light Mode';
+            } else {
+                document.body.classList.remove('light-mode');
+                moonIcon.style.display = 'inline-block';
+                sunIcon.style.display = 'none';
+                themeText.textContent = 'Light Mode';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initTheme);
+
+        window.addEventListener('beforeunload', function() {
+            socket.disconnect();
+        });
+    </script>
+</body>
+</html>

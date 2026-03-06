@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mentally Swasth - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --dark: #1f2937;
+            --darker: #111827;
+            --light: #f9fafb;
+            --gray: #6b7280;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 20px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.3rem;
+            text-transform: uppercase;
+        }
+
+        .user-details {
+            line-height: 1.4;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .user-level {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .logout-btn {
+            color: var(--danger);
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Welcome Banner */
+        .welcome-banner {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(16, 185, 129, 0.2));
+            border-radius: 30px;
+            padding: 40px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-content h2 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .welcome-content h2 span {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .welcome-content p {
+            color: var(--gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+        }
+
+        /* Stats Grid - REAL DATA ONLY */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .stat-content h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .stat-content p {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Main Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 30px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        .card-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .card-link:hover {
+            gap: 10px;
+        }
+
+        /* Mood Grid */
+        .mood-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .mood-option {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .mood-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+
+        .mood-option.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .mood-emoji {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .mood-label {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .mood-note {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: var(--light);
+            font-family: 'Poppins', sans-serif;
+            margin: 15px 0;
+            resize: vertical;
+        }
+
+        .mood-note:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .track-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .track-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .track-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Progress Section */
+        .progress-info {
+            margin-bottom: 20px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: var(--gray);
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 5px;
+            transition: width 1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .stats-list {
+            margin-top: 20px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-row i {
+            width: 25px;
+            color: var(--primary);
+        }
+
+        /* CHAT ACTION - ONE BUTTON FOR EVERYONE */
+        .chat-action-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(16, 185, 129, 0.2));
+            border: 2px solid var(--primary);
+            text-align: center;
+            padding: 30px;
+        }
+
+        .community-chat-btn {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border: none;
+            border-radius: 60px;
+            padding: 25px 50px;
+            color: white;
+            font-size: 2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            text-decoration: none;
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4);
+            animation: pulse 2s infinite;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .community-chat-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 25px 50px rgba(99, 102, 241, 0.5);
+        }
+
+        .community-chat-btn i {
+            font-size: 2.5rem;
+        }
+
+        .online-status {
+            margin-top: 20px;
+            color: var(--success);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .online-status .dot {
+            width: 12px;
+            height: 12px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(99, 102, 241, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+            }
+        }
+
+        /* Secondary Actions */
+        .secondary-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 15px;
+            text-decoration: none;
+            color: var(--light);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-3px);
+            border-color: var(--primary);
+        }
+
+        .action-btn i {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .action-btn span {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Quote Card */
+        .quote-card {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #1e40af, #1e3a8a);
+            border-radius: 30px;
+            padding: 40px;
+            text-align: center;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quote-card::before {
+            content: '"';
+            position: absolute;
+            top: -50px;
+            left: 20px;
+            font-size: 200px;
+            color: rgba(255, 255, 255, 0.1);
+            font-family: serif;
+        }
+
+        .quote {
+            font-size: 1.8rem;
+            font-style: italic;
+            margin-bottom: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .author {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Daily Tip */
+        .tip-card {
+            background: linear-gradient(135deg, #059669, #047857);
+            border-radius: 20px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .tip-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .tip-content {
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .user-info {
+                justify-content: space-between;
+            }
+            
+            .mood-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .welcome-content h2 {
+                font-size: 1.8rem;
+            }
+            
+            .quote {
+                font-size: 1.4rem;
+            }
+
+            .community-chat-btn {
+                font-size: 1.5rem;
+                padding: 20px 30px;
+            }
+        }
+
+        /* Success Message */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, var(--secondary), #059669);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.5s ease;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <h1>Mentally Swasth</h1>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar" id="userAvatar">
+                    {{ username[0]|upper if username else 'U' }}
+                </div>
+                <div class="user-details">
+                    <div class="user-name">{{ username }}</div>
+                    <div class="user-level">Level {{ level }} • {{ title }}</div>
+                </div>
+                <a href="/logout" class="logout-btn" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- Welcome Banner -->
+        <div class="welcome-banner">
+            <div class="welcome-content">
+                <h2>Welcome back, <span>{{ username }}</span>!</h2>
+                <p>Your mental wellness journey continues. You're doing great!</p>
+            </div>
+        </div>
+
+        <!-- Stats Grid - REAL DATA FROM DATABASE -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-smile"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ total_moods or 0 }}</h3>
+                    <p>Mood Check-ins</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ streak or 1 }}</h3>
+                    <p>Day Streak</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ total_messages or 0 }}</h3>
+                    <p>Chat Messages</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Level {{ level }}</h3>
+                    <p>Current Level</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Left Column -->
+            <div class="left-column">
+                <!-- Mood Tracking Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-heart"></i>
+                            How are you feeling?
+                        </div>
+                    </div>
+                    
+                    <div class="mood-grid">
+                        <div class="mood-option" data-mood="happy" data-emoji="😊" data-value="5">
+                            <div class="mood-emoji">😊</div>
+                            <div class="mood-label">Happy</div>
+                        </div>
+                        <div class="mood-option" data-mood="calm" data-emoji="😌" data-value="4">
+                            <div class="mood-emoji">😌</div>
+                            <div class="mood-label">Calm</div>
+                        </div>
+                        <div class="mood-option" data-mood="neutral" data-emoji="😐" data-value="3">
+                            <div class="mood-emoji">😐</div>
+                            <div class="mood-label">Neutral</div>
+                        </div>
+                        <div class="mood-option" data-mood="sad" data-emoji="😢" data-value="2">
+                            <div class="mood-emoji">😢</div>
+                            <div class="mood-label">Sad</div>
+                        </div>
+                        <div class="mood-option" data-mood="anxious" data-emoji="😰" data-value="2">
+                            <div class="mood-emoji">😰</div>
+                            <div class="mood-label">Anxious</div>
+                        </div>
+                    </div>
+
+                    <textarea class="mood-note" id="moodNote" placeholder="Add a note about your mood (optional)..." rows="2"></textarea>
+                    
+                    <button class="track-btn" id="trackMoodBtn" onclick="trackMood()">
+                        <i class="fas fa-check-circle"></i>
+                        Track Mood
+                    </button>
+                </div>
+
+                <!-- Recent Moods - REAL DATA -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-history"></i>
+                            Recent Moods
+                        </div>
+                        <a href="/mood" class="card-link">
+                            View All <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="recent-activity" id="recentMoods">
+                        <!-- Real data loaded via API -->
+                        <div style="text-align: center; color: var(--gray); padding: 20px;">
+                            <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="right-column">
+                <!-- Progress Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <i class="fas fa-chart-line"></i>
+                            Your Progress
+                        </div>
+                        <a href="/level" class="card-link">
+                            Details <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="progress-info">
+                        <div class="progress-header">
+                            <span>Level {{ level }}</span>
+                            <span>{{ xp }} / {{ level * 100 }} XP</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: {{ progress }}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="stats-list">
+                        <div class="stat-row">
+                            <span><i class="fas fa-heart"></i> Total Check-ins</span>
+                            <span>{{ total_moods or 0 }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span><i class="fas fa-comments"></i> Messages Sent</span>
+                            <span>{{ total_messages or 0 }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span><i class="fas fa-calendar"></i> Member Since</span>
+                            <span>{{ created_at or 'Recently' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ONE CHAT FOR EVERYONE - REAL COMMUNITY CHAT -->
+                <div class="card chat-action-card">
+                    <a href="/chat" class="community-chat-btn">
+                        <i class="fas fa-users"></i>
+                        Chat with Community
+                    </a>
+                    <div class="online-status" id="onlineStatus">
+                        <span class="dot"></span>
+                        <span id="onlineCount">Loading...</span> online now
+                    </div>
+                    <p style="color: var(--gray); margin-top: 15px;">
+                        Join the conversation with everyone in real-time
+                    </p>
+                </div>
+
+                <!-- Secondary Actions -->
+                <div class="secondary-actions">
+                    <a href="/mood" class="action-btn">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Mood History</span>
+                    </a>
+                    <a href="/rating" class="action-btn">
+                        <i class="fas fa-star"></i>
+                        <span>Rate Us</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quote Card -->
+        <div class="quote-card">
+            <div class="quote">
+                "A safe space for minds that just need a moment to breathe."
+            </div>
+         
+        </div>
+
+        <!-- Daily Wellness Tip - REAL DATA -->
+        <div class="tip-card">
+            <div class="tip-title">
+                <i class="fas fa-lightbulb"></i>
+                Daily Wellness Tip
+            </div>
+            <div class="tip-content" id="dailyTip">
+                {{ daily_tip }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message Container -->
+    <div id="successMessage" style="display: none;"></div>
+
+    <script>
+        let selectedMood = null;
+
+        // Mood selection
+        document.querySelectorAll('.mood-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.mood-option').forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedMood = {
+                    mood: this.dataset.mood,
+                    emoji: this.dataset.emoji,
+                    value: parseInt(this.dataset.value)
+                };
+            });
+        });
+
+        // Load REAL recent moods from database
+        async function loadRecentMoods() {
+            try {
+                const response = await fetch('/api/recent_moods');
+                const data = await response.json();
+                
+                const container = document.getElementById('recentMoods');
+                if (data.moods && data.moods.length > 0) {
+                    let html = '';
+                    data.moods.slice(0, 5).forEach(mood => {
+                        html += `
+                            <div class="stat-row">
+                                <div>
+                                    <span style="margin-right: 10px;">${mood.emoji}</span>
+                                    ${mood.mood.charAt(0).toUpperCase() + mood.mood.slice(1)}
+                                </div>
+                                <small>${mood.timestamp}</small>
+                            </div>
+                        `;
+                    });
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align: center; color: var(--gray); padding: 20px;">
+                            <i class="fas fa-heart" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                            <p>No moods tracked yet. Track your first mood above!</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading moods:', error);
+            }
+        }
+
+        // Get REAL online count from server
+        async function loadOnlineCount() {
+            try {
+                const response = await fetch('/api/online_count');
+                const data = await response.json();
+                document.getElementById('onlineCount').textContent = data.count;
+            } catch (error) {
+                document.getElementById('onlineCount').textContent = '0';
+            }
+        }
+
+        // Track mood function
+        async function trackMood() {
+            if (!selectedMood) {
+                showMessage('Please select a mood first!', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('trackMoodBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Tracking...';
+            btn.disabled = true;
+
+            const note = document.getElementById('moodNote').value;
+
+            try {
+                const response = await fetch('/api/save_mood', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        mood: selectedMood.mood,
+                        emoji: selectedMood.emoji,
+                        value: selectedMood.value,
+                        note: note
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`✅ Mood tracked! +${data.xp} XP earned`, 'success');
+                    
+                    if (data.leveled_up) {
+                        setTimeout(() => {
+                            showMessage(`🎉 Level Up! You're now Level ${data.new_level}!`, 'level');
+                            confetti({
+                                particleCount: 100,
+                                spread: 70,
+                                origin: { y: 0.6 }
+                            });
+                        }, 1500);
+                    }
+                    
+                    // Reset
+                    document.querySelectorAll('.mood-option').forEach(opt => opt.classList.remove('selected'));
+                    document.getElementById('moodNote').value = '';
+                    selectedMood = null;
+                    
+                    // Reload REAL data
+                    loadRecentMoods();
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                }
+            } catch (error) {
+                showMessage('Error tracking mood. Please try again.', 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const container = document.getElementById('successMessage');
+            container.style.display = 'block';
+            container.className = 'success-message';
+            
+            if (type === 'error') {
+                container.style.background = 'linear-gradient(45deg, #ef4444, #dc2626)';
+            } else if (type === 'level') {
+                container.style.background = 'linear-gradient(45deg, #fbbf24, #f59e0b)';
+            } else {
+                container.style.background = 'linear-gradient(45deg, var(--secondary), #059669)';
+            }
+            
+            container.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>${message}`;
+            
+            setTimeout(() => {
+                container.style.display = 'none';
+            }, 3000);
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                document.querySelector('.progress-fill').style.width = '{{ progress }}%';
+            }, 100);
+            
+            loadRecentMoods();
+            loadOnlineCount();
+            
+            // Update online count every 10 seconds
+            setInterval(loadOnlineCount, 10000);
+        });
+    </script>
+
+    <!-- Confetti library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+</body>
+</html>

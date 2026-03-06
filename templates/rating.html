@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rate Your Experience - Mentally Swasth</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Rating page specific styles - using CSS variables from style.css */
+        .rating-page {
+            min-height: 100vh;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+        }
+
+        .rating-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo i {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all var(--transition-normal);
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: var(--card-hover);
+            transform: translateX(-5px);
+            border-color: var(--primary);
+        }
+
+        /* Hero Section */
+        .rating-hero {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius-xl);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rating-hero::before {
+            content: '"';
+            position: absolute;
+            top: -50px;
+            left: 20px;
+            font-size: 200px;
+            color: rgba(99, 102, 241, 0.1);
+            font-family: serif;
+            transform: rotate(15deg);
+        }
+
+        .rating-hero::after {
+            content: '"';
+            position: absolute;
+            bottom: -80px;
+            right: 20px;
+            font-size: 200px;
+            color: rgba(16, 185, 129, 0.1);
+            font-family: serif;
+            transform: rotate(-15deg);
+        }
+
+        .rating-hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            position: relative;
+            z-index: 1;
+        }
+
+        .rating-hero p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-lg);
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all var(--transition-normal);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+            background: var(--card-hover);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .stat-content h3 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .stat-content p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Main Rating Card */
+        .rating-card {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-xl);
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .rating-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .rating-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .rating-content h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .rating-content p {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        /* Star Rating */
+        .star-rating-container {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(128, 128, 128, 0.05);
+            border-radius: var(--border-radius-lg);
+            border: 1px dashed var(--border-color);
+        }
+
+        .star-rating {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .star {
+            font-size: 3.5rem;
+            color: var(--gray-500);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .star:hover {
+            transform: scale(1.2);
+            color: var(--warning);
+        }
+
+        .star.selected {
+            color: var(--warning);
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+            animation: starPulse 0.5s ease;
+        }
+
+        @keyframes starPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .rating-label {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            min-height: 30px;
+            font-weight: 500;
+        }
+
+        /* Feedback Input */
+        .feedback-section {
+            margin-bottom: 30px;
+        }
+
+        .feedback-input {
+            width: 100%;
+            padding: 20px;
+            background: var(--input-bg);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius-lg);
+            color: var(--text-primary);
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            transition: all var(--transition-normal);
+        }
+
+        .feedback-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--input-focus);
+        }
+
+        .feedback-input::placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-md);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* XP Reward Badge */
+        .xp-reward {
+            display: inline-block;
+            background: linear-gradient(45deg, var(--warning), var(--warning-dark));
+            color: white;
+            padding: 5px 15px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        .xp-reward i {
+            margin-right: 5px;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+            }
+        }
+
+        /* History Section */
+        .history-section {
+            background: var(--card-bg);
+            border-radius: var(--border-radius-xl);
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .history-header h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .history-header h3 i {
+            color: var(--primary);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            background: rgba(128, 128, 128, 0.1);
+            padding: 4px;
+            border-radius: 40px;
+        }
+
+        .filter-btn {
+            padding: 8px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 30px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            color: var(--text-primary);
+            background: rgba(128, 128, 128, 0.2);
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .ratings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .ratings-list::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .ratings-list::-webkit-scrollbar-track {
+            background: rgba(128, 128, 128, 0.1);
+            border-radius: 10px;
+        }
+
+        .ratings-list::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        .rating-item {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(128, 128, 128, 0.02);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-normal);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .rating-item:hover {
+            background: var(--card-hover);
+            transform: translateX(5px);
+            border-color: var(--primary);
+        }
+
+        .rating-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 5px;
+        }
+
+        .star-small {
+            color: var(--gray-500);
+            font-size: 1.2rem;
+        }
+
+        .star-small.filled {
+            color: var(--warning);
+            filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.5));
+        }
+
+        .rating-date {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .rating-date i {
+            font-size: 0.8rem;
+        }
+
+        .rating-feedback {
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 15px;
+            background: rgba(128, 128, 128, 0.02);
+            border-radius: var(--border-radius-md);
+            border-left: 3px solid var(--primary);
+            font-style: italic;
+        }
+
+        .rating-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .rating-xp {
+            background: linear-gradient(45deg, var(--warning), var(--warning-dark));
+            padding: 5px 15px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 500;
+        }
+
+        .rating-type {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+            color: var(--primary);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .empty-state p {
+            color: var(--text-muted);
+        }
+
+        /* Success Toast */
+        .success-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, var(--success), var(--success-dark));
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .success-toast.error {
+            background: linear-gradient(45deg, var(--danger), var(--danger-dark));
+        }
+
+        .success-toast.warning {
+            background: linear-gradient(45deg, var(--warning), var(--warning-dark));
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-xxl);
+            padding: 8px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            transition: all var(--transition-normal);
+            margin-right: 10px;
+        }
+
+        .theme-toggle:hover {
+            background: var(--card-hover);
+            transform: scale(1.05);
+            border-color: var(--primary);
+        }
+
+        .theme-toggle i {
+            color: var(--primary);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Fade In Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .rating-hero h1 {
+                font-size: 2rem;
+            }
+
+            .star {
+                font-size: 2.5rem;
+            }
+
+            .history-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .filter-btn {
+                flex: 1;
+                text-align: center;
+            }
+
+            .rating-item {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .rating-card {
+                padding: 25px;
+            }
+
+            .star {
+                font-size: 2rem;
+            }
+            
+            .theme-toggle span {
+                display: none;
+            }
+            
+            .theme-toggle {
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body class="rating-page">
+    <div class="rating-container">
+        <!-- Header with Theme Toggle -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-brain"></i>
+                <h1>Mentally Swasth</h1>
+            </div>
+            <div class="header-actions">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode">
+                    <i class="fas fa-moon moon-icon"></i>
+                    <i class="fas fa-sun sun-icon" style="display: none;"></i>
+                    <span id="themeText">Dark Mode</span>
+                </button>
+                <a href="/dashboard" class="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    Back
+                </a>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="rating-hero">
+            <h1>Share Your Experience</h1>
+            <p>Your feedback helps us improve and support the community better</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="avgRating">{{ avg_rating or '0.0' }}</h3>
+                    <p>Average Rating</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalRatings">{{ total_ratings or 0 }}</h3>
+                    <p>Total Reviews</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="totalXP">{{ total_xp or 0 }}</h3>
+                    <p>XP Earned</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <div class="stat-content">
+                    <h3 id="streak">{{ streak or 0 }}</h3>
+                    <p>Day Streak</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Rating Card -->
+        <div class="rating-card">
+            <div class="rating-content">
+                <h2>How was your experience?</h2>
+                <p>Rate your experience with the community chat</p>
+
+                <!-- Star Rating -->
+                <div class="star-rating-container">
+                    <div class="star-rating" id="starRating">
+                        <i class="fas fa-star star" data-rating="1"></i>
+                        <i class="fas fa-star star" data-rating="2"></i>
+                        <i class="fas fa-star star" data-rating="3"></i>
+                        <i class="fas fa-star star" data-rating="4"></i>
+                        <i class="fas fa-star star" data-rating="5"></i>
+                    </div>
+                    <div class="rating-label" id="ratingLabel">
+                        Tap a star to rate
+                    </div>
+                </div>
+
+                <!-- Feedback Input -->
+                <div class="feedback-section">
+                    <textarea class="feedback-input" id="feedbackInput" 
+                        placeholder="Tell us more about your experience... What did you like? What can we improve?"></textarea>
+                </div>
+
+                <!-- Submit Button -->
+                <button class="submit-btn" id="submitRating" onclick="submitRating()">
+                    <i class="fas fa-paper-plane"></i>
+                    Submit Rating
+                </button>
+
+                <!-- XP Reward Badge -->
+                <div class="xp-reward">
+                    <i class="fas fa-star"></i>
+                    +5 XP for every rating
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating History Section -->
+        <div class="history-section">
+            <div class="history-header">
+                <h3>
+                    <i class="fas fa-history"></i>
+                    Your Rating History
+                </h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" onclick="filterRatings('all')">All</button>
+                    <button class="filter-btn" onclick="filterRatings('5')">5 ⭐</button>
+                    <button class="filter-btn" onclick="filterRatings('4')">4 ⭐</button>
+                    <button class="filter-btn" onclick="filterRatings('3')">3 ⭐</button>
+                    <button class="filter-btn" onclick="filterRatings('2')">2 ⭐</button>
+                    <button class="filter-btn" onclick="filterRatings('1')">1 ⭐</button>
+                </div>
+            </div>
+
+            <div class="ratings-list" id="ratingsList">
+                {% if ratings %}
+                    {% for rating in ratings %}
+                    <div class="rating-item" data-rating="{{ rating.rating_value }}">
+                        <div class="rating-header">
+                            <div class="rating-stars">
+                                {% for i in range(1, 6) %}
+                                    <i class="fas fa-star star-small {% if i <= rating.rating_value %}filled{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <div class="rating-date">
+                                <i class="far fa-clock"></i>
+                                {{ rating.timestamp }}
+                            </div>
+                        </div>
+                        {% if rating.feedback %}
+                        <div class="rating-feedback">
+                            "{{ rating.feedback }}"
+                        </div>
+                        {% endif %}
+                        <div class="rating-footer">
+                            <span class="rating-xp">
+                                <i class="fas fa-star"></i> +5 XP
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-star"></i>
+                    <h3>No ratings yet</h3>
+                    <p>Be the first to rate your experience!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Toast Container -->
+    <div id="successToast" style="display: none;"></div>
+
+    <script>
+        // ========== STAR RATING ==========
+        let selectedRating = 0;
+
+        // Star hover and click effects
+        document.querySelectorAll('.star').forEach(star => {
+            star.addEventListener('mouseover', function() {
+                const rating = this.dataset.rating;
+                highlightStars(rating);
+                showRatingLabel(rating);
+            });
+
+            star.addEventListener('mouseout', function() {
+                highlightStars(selectedRating);
+                showRatingLabel(selectedRating);
+            });
+
+            star.addEventListener('click', function() {
+                selectedRating = parseInt(this.dataset.rating);
+                highlightStars(selectedRating);
+                showRatingLabel(selectedRating);
+                
+                // Add pulse animation
+                this.style.animation = 'starPulse 0.5s ease';
+                setTimeout(() => {
+                    this.style.animation = '';
+                }, 500);
+            });
+        });
+
+        function highlightStars(rating) {
+            document.querySelectorAll('.star').forEach(star => {
+                if (star.dataset.rating <= rating) {
+                    star.classList.add('selected');
+                } else {
+                    star.classList.remove('selected');
+                }
+            });
+        }
+
+        function showRatingLabel(rating) {
+            const label = document.getElementById('ratingLabel');
+            const labels = [
+                'Tap a star to rate',
+                '😫 Awful - Really bad experience',
+                '😢 Sad - Could be much better',
+                '😐 Neutral - It was okay',
+                '😊 Happy - Good experience',
+                '🤩 Excellent - Loved it!'
+            ];
+            label.textContent = labels[rating] || labels[0];
+        }
+
+        // ========== CONFETTI FUNCTIONS ==========
+        function launchConfetti(rating) {
+            if (typeof confetti === 'undefined') return;
+            
+            const colors = {
+                1: ['#ef4444', '#f87171', '#dc2626'],  // Reds for 1 star
+                2: ['#f97316', '#fb923c', '#ea580c'],  // Oranges for 2 stars
+                3: ['#fbbf24', '#fcd34d', '#f59e0b'],  // Yellows for 3 stars
+                4: ['#34d399', '#6ee7b7', '#10b981'],  // Greens for 4 stars
+                5: ['#6366f1', '#818cf8', '#4f46e5']   // Purples for 5 stars
+            };
+            
+            const emojis = {
+                1: ['😫', '😢', '💔', '👎'],
+                2: ['😕', '😐', '🤔', '😒'],
+                3: ['😶', '🤷', '🫤', '😑'],
+                4: ['😊', '🙂', '👍', '💚'],
+                5: ['🤩', '🎉', '✨', '💜', '🌟', '⭐']
+            };
+            
+            // Launch multiple confetti bursts
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 20,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: colors[rating],
+                        startVelocity: 25 + (i * 5)
+                    });
+                }, i * 150);
+            }
+            
+            // Add emoji confetti for 5 stars
+            if (rating === 5) {
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 30,
+                        spread: 100,
+                        origin: { y: 0.5 },
+                        colors: ['#6366f1', '#10b981', '#fbbf24'],
+                        shapes: ['star'],
+                        startVelocity: 30
+                    });
+                }, 300);
+            }
+            
+            // Create a canvas for emoji confetti
+            const canvas = document.createElement('canvas');
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '9999';
+            document.body.appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            const emojiList = emojis[rating];
+            
+            for (let i = 0; i < 20; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height - canvas.height,
+                    emoji: emojiList[Math.floor(Math.random() * emojiList.length)],
+                    speed: 5 + Math.random() * 5,
+                    rotation: Math.random() * 360,
+                    size: 20 + Math.random() * 20
+                });
+            }
+            
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                let anyVisible = false;
+                particles.forEach(p => {
+                    p.y += p.speed;
+                    
+                    if (p.y < canvas.height) {
+                        anyVisible = true;
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rotation * Math.PI) / 180);
+                        ctx.font = `${p.size}px Arial`;
+                        ctx.fillStyle = 'white';
+                        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                        ctx.shadowBlur = 10;
+                        ctx.fillText(p.emoji, -p.size/2, -p.size/2);
+                        ctx.restore();
+                    }
+                });
+                
+                if (anyVisible) {
+                    requestAnimationFrame(animate);
+                } else {
+                    document.body.removeChild(canvas);
+                }
+            }
+            
+            animate();
+        }
+
+        // ========== SUBMIT RATING ==========
+        async function submitRating() {
+            const feedback = document.getElementById('feedbackInput').value.trim();
+
+            if (!selectedRating) {
+                showToast('Please select a rating!', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('submitRating');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            btn.disabled = true;
+
+            try {
+                // Send to backend
+                const response = await fetch('/api/save_rating', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        rating: selectedRating,
+                        feedback: feedback,
+                        category: 'chat'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(`✅ Rating submitted! +${data.xp} XP earned`, 'success');
+                    
+                    // Launch confetti based on rating
+                    launchConfetti(selectedRating);
+
+                    // Reset form
+                    selectedRating = 0;
+                    highlightStars(0);
+                    showRatingLabel(0);
+                    document.getElementById('feedbackInput').value = '';
+
+                    // Reload to show new rating
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                }
+            } catch (error) {
+                showToast('Error submitting rating. Please try again.', 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // ========== FILTER RATINGS ==========
+        function filterRatings(rating) {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filter items
+            const items = document.querySelectorAll('.rating-item');
+            items.forEach(item => {
+                if (rating === 'all' || item.dataset.rating === rating) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // ========== TOAST MESSAGE ==========
+        function showToast(message, type) {
+            const toast = document.getElementById('successToast');
+            toast.style.display = 'flex';
+            toast.className = 'success-toast';
+            
+            if (type === 'error') {
+                toast.classList.add('error');
+            } else if (type === 'warning') {
+                toast.classList.add('warning');
+            }
+            
+            toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>${message}`;
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // ========== THEME TOGGLE ==========
+        function toggleTheme() {
+            const body = document.body;
+            const moonIcon = document.querySelector('.moon-icon');
+            const sunIcon = document.querySelector('.sun-icon');
+            const themeText = document.getElementById('themeText');
+            
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                moonIcon.style.display = 'inline-block';
+                sunIcon.style.display = 'none';
+                themeText.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'inline-block';
+                themeText.textContent = 'Light Mode';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Initialize theme on page load
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const moonIcon = document.querySelector('.moon-icon');
+            const sunIcon = document.querySelector('.sun-icon');
+            const themeText = document.getElementById('themeText');
+            
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+                moonIcon.style.display = 'none';
+                sunIcon.style.display = 'inline-block';
+                themeText.textContent = 'Light Mode';
+            } else {
+                document.body.classList.remove('light-mode');
+                moonIcon.style.display = 'inline-block';
+                sunIcon.style.display = 'none';
+                themeText.textContent = 'Dark Mode';
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // ========== INITIALIZATION ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            
+            // Add confetti script if not present
+            if (typeof confetti === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1';
+                document.head.appendChild(script);
+            }
+        });
+    </script>
+</body>
+</html>
