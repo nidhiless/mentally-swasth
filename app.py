@@ -5,7 +5,11 @@ from flask_mail import Mail, Message  # ← This is for EMAILS
 from datetime import datetime, timedelta, timezone
 import random
 import uuid
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
+
 from collections import defaultdict
 
 app = Flask(__name__)
@@ -26,6 +30,8 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
 app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
+print("MAIL USER:", os.getenv("MAIL_USERNAME"))
+print("MAIL PASS:", os.getenv("MAIL_PASSWORD"))
 # Initialize extensions
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
