@@ -17,4 +17,4 @@ flask-mail==0.9.1
 gunicorn==21.2.0
 eventlet==0.36.1
 python-dotenv
-Flask-SQLAlchemy
+flask-SQLAlchemy
