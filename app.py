@@ -11,11 +11,12 @@ from collections import defaultdict
 load_dotenv()
 
 app = Flask(__name__)
-socketio = SocketIO(app)
 
-# Configuration
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback-dev-secret-key-123')
+# Configuration — SECRET_KEY must be set before anything else
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'mentally-swasth-secret-key-2024')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False  # set True only if HTTPS enforced
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     "DATABASE_URL",
     "sqlite:///mentally_swasth.db"
@@ -231,18 +232,34 @@ def login():
         db.session.commit()
 
         if send_otp_email(user.email, otp, user.username):
+            # ✅ Save to session THEN redirect — this is the key fix
+            session.permanent = True
             session['otp_user_id'] = user.id
             session['otp_username'] = user.username
             session['otp_email'] = user.email
-            return render_template('verify-otp.html', username=user.username, email=user.email)
+            return redirect(url_for('verify_otp_page'))  # ← REDIRECT not render_template
         else:
             return render_template('login.html', error="Failed to send OTP. Please try again.")
 
     return render_template('login.html')
 
 
+# ========== SEPARATE GET ROUTE FOR OTP PAGE ==========
+@app.route('/verify-otp', methods=['GET'])
+def verify_otp_page():
+    """Show the OTP verification page"""
+    user_id = session.get('otp_user_id')
+    if not user_id:
+        return redirect(url_for('login'))
+
+    return render_template('verify-otp.html',
+                           username=session.get('otp_username', ''),
+                           email=session.get('otp_email', ''))
+
+
 @app.route('/verify-otp', methods=['POST'])
 def verify_otp_route():
+    """Handle OTP form submission"""
     otp = request.form.get('otp', '').strip()
     username = request.form.get('username', '').strip()
 
@@ -251,6 +268,8 @@ def verify_otp_route():
                                username=username, email=session.get('otp_email', ''))
 
     user_id = session.get('otp_user_id')
+    print(f"DEBUG verify: user_id from session = {user_id}, session = {dict(session)}")
+
     if not user_id:
         return redirect(url_for('login'))
 
@@ -269,7 +288,7 @@ def verify_otp_route():
         session.pop('otp_email', None)
         user.last_active = datetime.now(timezone.utc)
         db.session.commit()
-        print(f"DEBUG: Login success for {user.username}, session={dict(session)}")
+        print(f"DEBUG: ✅ Login success for {user.username}, session={dict(session)}")
         return redirect(url_for('dashboard'))
     else:
         return render_template('verify-otp.html', error=message,
@@ -308,7 +327,7 @@ def logout():
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
-        print(f"DEBUG: No user_id in session, redirecting to login. Session={dict(session)}")
+        print(f"DEBUG: ❌ No user_id in session at dashboard. Session={dict(session)}")
         return redirect(url_for('login'))
     user = User.query.get(int(session['user_id']))
     if not user:
