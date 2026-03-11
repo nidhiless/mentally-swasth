@@ -14,7 +14,7 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 
 # Configuration
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback-dev-secret-key-123')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     "DATABASE_URL",
@@ -101,18 +101,11 @@ with app.app_context():
     db.create_all()
 
 
-# ========== RESEND EMAIL (via HTTP — no package needed) ==========
+# ========== RESEND EMAIL ==========
 def send_otp_email(user_email, otp, username):
-    """Send OTP via Resend HTTP API - no resend package, just requests"""
     try:
         print(f"📧 Attempting to send email to: {user_email}")
-
         RESEND_API_KEY = os.getenv('RESEND_API_KEY')
-
-        # NOTE: Until you add a custom domain on Resend,
-        # 'from' must be: onboarding@resend.dev
-        # AND you can only send to your OWN verified email.
-        # Add a domain at resend.com/domains to send to anyone.
         MAIL_FROM = os.getenv('MAIL_FROM', 'Mentally Swasth <onboarding@resend.dev>')
 
         response = requests.post(
@@ -266,7 +259,9 @@ def verify_otp_route():
         return redirect(url_for('login'))
 
     success, message = verify_otp(user, otp)
+
     if success:
+        session.permanent = True
         session['user_id'] = str(user.id)
         session['username'] = user.username
         session.pop('otp_user_id', None)
@@ -274,6 +269,7 @@ def verify_otp_route():
         session.pop('otp_email', None)
         user.last_active = datetime.now(timezone.utc)
         db.session.commit()
+        print(f"DEBUG: Login success for {user.username}, session={dict(session)}")
         return redirect(url_for('dashboard'))
     else:
         return render_template('verify-otp.html', error=message,
@@ -312,6 +308,7 @@ def logout():
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
+        print(f"DEBUG: No user_id in session, redirecting to login. Session={dict(session)}")
         return redirect(url_for('login'))
     user = User.query.get(int(session['user_id']))
     if not user:
